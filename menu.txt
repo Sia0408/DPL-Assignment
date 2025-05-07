@@ -1,1 +1,2 @@
 burger,12.9
+pizza,15.9
