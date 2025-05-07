@@ -29,9 +29,40 @@ def register_admin():
     password = input("Enter new admin password: ")
     password = custom_strip(password)
 
-    with open("admin.txt", "a") as file:
-        file.write(name + "," + password + "\n")
+    try:
+        with open("admin.txt", "r") as file:
+            content = file.read()
+            lines = []
+            line = ''
+            for char in content:
+                if char == '\n':
+                    lines.append(custom_strip(line))
+                    line = ''
+                else:
+                    line += char
+            if line:
+                lines.append(custom_strip(line))
+    except FileNotFoundError:
+        lines = ["Name           Password"]
+
+    for line in lines[1:]:
+        parts = custom_split(line, ' ')
+        parts = [p for p in parts if p != '']
+        if len(parts) >= 2 and parts[0] == name:
+            print("Admin already exists.")
+            return
+
+    space_count = 15 - len(name)
+    spaces = ' ' * max(space_count, 1)
+    new_line = name + spaces + password
+    lines.append(new_line)
+
+    with open("admin.txt", "w") as file:
+        for line in lines:
+            file.write(line + "\n")
+
     print("Admin " + name + " registered successfully!")
+
 
 def admin_login():
     print("\n=== Admin Login ===")
@@ -42,18 +73,24 @@ def admin_login():
 
     try:
         with open("admin.txt", "r") as file:
-            content = file.read()
             line = ''
-            for char in content:
+            skip_header = True
+            for char in file.read():
                 if char == '\n':
-                    parts = custom_split(custom_strip(line), ',')
-                    if len(parts) == 2:
-                        stored_name = parts[0]
-                        stored_pass = parts[1]
-                        if name == stored_name and password == stored_pass:
-                            print("Welcome, " + name + "!")
-                            admin_menu()
-                            return
+                    line = custom_strip(line)
+                    if skip_header:
+                        skip_header = False
+                    elif line != "":
+                        parts = custom_split(line, ' ')
+                        # Clean empty spaces
+                        parts = [p for p in parts if p != '']
+                        if len(parts) >= 2:
+                            stored_name = parts[0]
+                            stored_pass = parts[1]
+                            if name == stored_name and password == stored_pass:
+                                print("Welcome, " + name + "!")
+                                admin_menu()
+                                return
                     line = ''
                 else:
                     line += char
@@ -61,18 +98,19 @@ def admin_login():
     except FileNotFoundError:
         print("No admin data found. Please register an admin first.")
 
+
 def admin_menu():
     while True:
         print("\n=== Admin Menu ===")
         print("1. Display Menu")
-        print("2. Update Product")
+        print("2. Edit Product")
         print("3. Exit")
         choice = input("Choose an option: ")
 
         if choice == "1":
             display_menu()
         elif choice == "2":
-            update_product()
+            edit_product()
         elif choice == "3":
             print("Logging out...")
             break
@@ -90,24 +128,159 @@ def display_menu():
             line = ''
             for char in content:
                 if char == '\n':
-                    parts = custom_split(custom_strip(line), ',')
-                    if len(parts) == 2:
-                        print(parts[0] + " - RM" + parts[1])
+                    line = custom_strip(line)
+                    if line != "":
+                        print(line)
                     line = ''
                 else:
                     line += char
     except FileNotFoundError:
         print("Menu not found.")
 
-def update_product():
-    print("\n--- Add New Dish ---")
-    dish = input("Enter dish name: ")
-    dish = custom_strip(dish)
-    price = input("Enter price (RM): ")
-    price = custom_strip(price)
-    with open("menu.txt", "a") as file:
-        file.write(dish + "," + price + "\n")
-    print("Dish '" + dish + "' added successfully to the menu.")
+
+def edit_product():
+    while True:
+        print("\n--- Edit Product Menu ---")
+        print("1. Add Product")
+        print("2. Update Product")
+        print("3. Delete Product")
+        print("4. Exit")
+        choice = custom_strip(input("Choose an option: "))
+
+        try:
+            with open("menu.txt", "r") as file:
+                lines = []
+                current = ''
+                for char in file.read():
+                    if char == '\n':
+                        lines.append(current)
+                        current = ''
+                    else:
+                        current += char
+                if current != '':
+                    lines.append(current)
+        except FileNotFoundError:
+            lines = []
+
+        if len(lines) == 0:
+            lines.append("No  Product        Price (RM)")
+
+        if choice == "1":
+            while True:
+                product_number = custom_strip(input("Enter product number : "))
+                is_valid = True
+                for char in product_number:
+                    if char < '0' or char > '9':
+                        is_valid = False
+                        break
+                if not is_valid or product_number == "":
+                    print("Invalid input. Please enter digits only.")
+                else:
+                    break
+
+            while True:
+                product_name = custom_strip(input("Enter product name : "))
+                is_valid = True
+                for char in product_name:
+                    if not (('a' <= char <= 'z') or ('A' <= char <= 'Z') or char == ' '):
+                        is_valid = False
+                        break
+                if not is_valid or product_name == "":
+                    print("Invalid input. Please enter letters only.")
+                else:
+                    break
+
+            while True:
+                product_price = custom_strip(input("Enter price(RM) (e.g., 12.50): "))
+                dot_count = 0
+                is_valid = True
+                if product_price == "":
+                    is_valid = False
+                else:
+                    for i, char in enumerate(product_price):
+                        if char == '.':
+                            dot_count += 1
+                            if dot_count > 1:
+                                is_valid = False
+                                break
+                        elif char < '0' or char > '9':
+                            is_valid = False
+                            break
+                if not is_valid:
+                    print("Invalid price format.")
+                else:
+                    break
+
+            exists = False
+            for line in lines[1:]:
+                if line.startswith("[" + product_number + "]"):
+                    exists = True
+                    break
+            if exists:
+                print("Product number already exists.")
+                continue
+
+            space_count = 15 - len(product_name)
+            spaces = ' ' * max(space_count, 1)
+            new_line = "[" + product_number + "] " + product_name + spaces + product_price
+            lines.append(new_line)
+            print("Product added successfully.")
+
+
+        elif choice == "2":
+            prod_num = custom_strip(input("Enter product number to update: "))
+            found = False
+            for i in range(1, len(lines)):
+                if lines[i].startswith("[" + prod_num + "]"):
+                    found = True
+                    print("Current: " + lines[i])
+                    new_name = custom_strip(input("Enter new name (leave blank to keep current): "))
+                    new_price = custom_strip(input("Enter new price (leave blank to keep current): "))
+
+                    line = lines[i]
+                    end_num = line.find("]") + 1
+                    parts = custom_strip(line[end_num:]).split()
+                    current_name = parts[0]
+                    current_price = parts[-1]
+
+                    if new_name == "":
+                        new_name = current_name
+                    if new_price == "":
+                        new_price = current_price
+
+                    space_count = 15 - len(new_name)
+                    spaces = ' ' * max(space_count, 1)
+                    lines[i] = "[" + prod_num + "] " + new_name + spaces + new_price
+                    print("Product updated.")
+                    break
+            if not found:
+                print("Product number not found.")
+
+        elif choice == "3":
+            prod_num = custom_strip(input("Enter product number to delete: "))
+            found = False
+            new_lines = [lines[0]] 
+            for i in range(1, len(lines)):
+                if lines[i].startswith("[" + prod_num + "]"):
+                    found = True
+                    print("Deleted: " + lines[i])
+                    continue
+                new_lines.append(lines[i])
+            if not found:
+                print("Product number not found.")
+            else:
+                lines = new_lines
+
+        elif choice == "4":
+            break
+
+        else:
+            print("Invalid option.")
+            continue
+
+        with open("menu.txt", "w") as file:
+            for line in lines:
+                file.write(line + "\n")
 
 def main():
     print("=== Welcome to Admin System ===")

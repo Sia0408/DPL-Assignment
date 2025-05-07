@@ -1,2 +1,3 @@
-burger,12.9
-pizza,15.9
+No  Product        Price (RM)
+[1] burger         9.9
+[2] pizza          15.9
