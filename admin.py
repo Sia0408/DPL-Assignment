@@ -5,7 +5,7 @@ def custom_strip(s):
         start += 1
     while end >= start and (s[end] == ' ' or s[end] == '\n'):
         end -= 1
-    result = ''
+    result = ""
     for i in range(start, end + 1):
         result += s[i]
     return result
@@ -21,6 +21,7 @@ def custom_split(s, delimiter):
             current += char
     result.append(current)
     return result
+
 
 def register_admin():
     print("=== Admin Registration ===")
@@ -71,32 +72,38 @@ def admin_login():
     password = input("Enter password: ")
     password = custom_strip(password)
 
-    try:
-        with open("admin.txt", "r") as file:
-            line = ''
-            skip_header = True
-            for char in file.read():
-                if char == '\n':
-                    line = custom_strip(line)
-                    if skip_header:
-                        skip_header = False
-                    elif line != "":
-                        parts = custom_split(line, ' ')
-                        # Clean empty spaces
-                        parts = [p for p in parts if p != '']
-                        if len(parts) >= 2:
-                            stored_name = parts[0]
-                            stored_pass = parts[1]
-                            if name == stored_name and password == stored_pass:
-                                print("Welcome, " + name + "!")
-                                admin_menu()
-                                return
-                    line = ''
-                else:
-                    line += char
+    failed_attempts = 0
+    while failed_attempts < 3:
+        try:
+            with open("admin.txt", "r") as file:
+                line = ''
+                skip_header = True
+                for char in file.read():
+                    if char == '\n':
+                        line = custom_strip(line)
+                        if skip_header:
+                            skip_header = False
+                        elif line != "":
+                            parts = custom_split(line, ' ')
+                            parts = [p for p in parts if p != '']
+                            if len(parts) >= 2:
+                                stored_name = parts[0]
+                                stored_pass = parts[1]
+                                if name == stored_name and password == stored_pass:
+                                    print("Welcome, " + name + "!")
+                                    admin_menu()
+                                    return
+                        line = ''
+                    else:
+                        line += char
             print("Invalid admin credentials.")
-    except FileNotFoundError:
-        print("No admin data found. Please register an admin first.")
+            failed_attempts += 1
+            if failed_attempts == 3:
+                print("Too many failed attempts. Terminating...")
+                return
+        except FileNotFoundError:
+            print("No admin data found. Please register an admin first.")
+            return
 
 
 def admin_menu():
