@@ -1,14 +1,5 @@
 def custom_strip(s):
-    start = 0
-    end = len(s) - 1
-    while start <= end and (s[start] == ' ' or s[start] == '\n'):
-        start += 1
-    while end >= start and (s[end] == ' ' or s[end] == '\n'):
-        end -= 1
-    result = ""
-    for i in range(start, end + 1):
-        result += s[i]
-    return result
+    return s.strip(' \n')
 
 def custom_split(s, delimiter):
     result = []
@@ -46,12 +37,13 @@ def register_admin():
     except FileNotFoundError:
         lines = ["Name           Password"]
 
-    for line in lines[1:]:
-        parts = custom_split(line, ' ')
-        parts = [p for p in parts if p != '']
-        if len(parts) >= 2 and parts[0] == name:
-            print("Admin already exists.")
-            return
+    def is_admin_exists(line):
+        parts = [p for p in custom_split(line, ' ') if p]
+        return len(parts) >= 2 and parts[0] == name
+
+    if any(map(is_admin_exists, lines[1:])):
+        print("Admin already exists.")
+        return
 
     space_count = 15 - len(name)
     spaces = ' ' * max(space_count, 1)
@@ -83,16 +75,12 @@ def admin_login():
                         line = custom_strip(line)
                         if skip_header:
                             skip_header = False
-                        elif line != "":
-                            parts = custom_split(line, ' ')
-                            parts = [p for p in parts if p != '']
-                            if len(parts) >= 2:
-                                stored_name = parts[0]
-                                stored_pass = parts[1]
-                                if name == stored_name and password == stored_pass:
-                                    print("Welcome, " + name + "!")
-                                    admin_menu()
-                                    return
+                        elif line.strip():
+                            stored_name, *rest = line.split()
+                            if rest and (stored_name, rest[0]) == (name, password):
+                                print(f"Welcome, {name}!")
+                            admin_menu()
+                            return
                         line = ''
                     else:
                         line += char
@@ -189,7 +177,7 @@ def edit_product():
                 product_name = custom_strip(input("Enter product name : "))
                 is_valid = True
                 for char in product_name:
-                    if not (('a' <= char <= 'z') or ('A' <= char <= 'Z') or char == ' '):
+                    if char not in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ ':
                         is_valid = False
                         break
                 if not is_valid or product_name == "":
