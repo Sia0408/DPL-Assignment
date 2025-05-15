@@ -99,7 +99,7 @@ def admin_menu():
         print("\n=== Admin Menu ===")
         print("1. Display Menu")
         print("2. Edit Product")
-        print("3. Edit record")
+        print("3. Edit Record")
         print("4. Display Record")
         print("5. Exit")
         choice = input("Choose an option: ")
@@ -109,10 +109,15 @@ def admin_menu():
         elif choice == "2":
             edit_product()
         elif choice == "3":
+            edit_record()
+        elif choice == "4":
+            display_record()
+        elif choice == "5":
             print("Logging out...")
             break
         else:
             print("Invalid choice.")
+
 
 def display_menu():
     print("\n--- Restaurant Menu ---")
@@ -278,6 +283,82 @@ def edit_product():
         with open("menu.txt", "w") as file:
             for line in lines:
                 file.write(line + "\n")
+
+def display_record():
+    print("\n--- Booking Records ---")
+    try:
+        file = open("record.txt", "r")
+        content = file.read()
+        file.close()
+
+        if content.strip() == "":
+            print("No booking records found.")
+            return
+
+        print("{:<15}{:<15}{:<20}{}".format("Name", "Phone", "Time", "People"))
+        print("-" * 60)
+
+        lines = content.strip().split("\n")
+        for line in lines:
+            parts = line.strip().split("|")
+            if len(parts) == 4:
+                print("{:<15}{:<15}{:<20}{}".format(parts[0], parts[1], parts[2], parts[3]))
+    except:
+        print("No booking records found.")
+
+
+def edit_record():
+    print("\n--- Edit Booking Record ---")
+    name_to_edit = input("Enter the name to edit: ").strip()
+    updated_lines = []
+    found = False
+
+    try:
+        file = open("record.txt", "r")
+        lines = file.readlines()
+        file.close()
+
+        for line in lines:
+            parts = line.strip().split("|")
+            if len(parts) == 4 and parts[0].strip() == name_to_edit:
+                found = True
+                print("Current record:")
+                print("Name:", parts[0])
+                print("Phone:", parts[1])
+                print("Time:", parts[2])
+                print("People:", parts[3])
+
+                new_name = input("Enter new name (leave blank to keep current): ").strip()
+                new_phone = input("Enter new phone (leave blank to keep current): ").strip()
+                new_time = input("Enter new booking time (leave blank to keep current): ").strip()
+                new_people = input("Enter new number of people (leave blank to keep current): ").strip()
+
+                if new_name == "":
+                    new_name = parts[0]
+                if new_phone == "":
+                    new_phone = parts[1]
+                if new_time == "":
+                    new_time = parts[2]
+                if new_people == "":
+                    new_people = parts[3]
+
+                updated_line = new_name + "|" + new_phone + "|" + new_time + "|" + new_people
+                updated_lines.append(updated_line)
+                print("Record updated.")
+            else:
+                updated_lines.append(line.strip())
+
+        if not found:
+            print("Record not found.")
+
+        file = open("record.txt", "w")
+        for line in updated_lines:
+            file.write(line + "\n")
+        file.close()
+
+    except:
+        print("No booking records found.")
+
 
 def main():
     print("=== Welcome to Admin System ===")
