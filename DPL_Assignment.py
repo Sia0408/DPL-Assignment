@@ -33,9 +33,7 @@ def manual_parse_line(line):
         i += 1
     if i == string_length(line):
         return None, None
-    saved_username = line[:i]
-    saved_password = line[i+1:]
-    return saved_username, saved_password
+    return line[:i], line[i+1:]
 
 def compare_strings(str1, str2):
     i = 0
@@ -44,6 +42,36 @@ def compare_strings(str1, str2):
             return False
         i += 1
     return i == string_length(str1) and i == string_length(str2)
+
+def get_current_user():
+    try:
+        with open("data.txt", "r") as f:
+            while True:
+                line = f.readline()
+                if not line:
+                    break
+                if line.startswith("CURRENT_USER:"):
+                    return remove_newline(line[13:])
+    except:
+        pass
+    return ""
+
+def set_current_user(username):
+    lines = []
+    try:
+        with open("data.txt", "r") as f:
+            while True:
+                line = f.readline()
+                if not line:
+                    break
+                if not line.startswith("CURRENT_USER:"):
+                    lines.append(line)
+    except:
+        pass
+    with open("data.txt", "w") as f:
+        for l in lines:
+            f.write(l)
+        f.write("CURRENT_USER:" + username + "\n")
 
 # ------------------- Authentication -------------------
 def register():
@@ -57,21 +85,23 @@ def register():
         comfirmpassword = input("Confirm password        : ")
 
     try:
-        with open("Register.txt", "r") as file:
-            for line in file:
-                saved_username, _ = manual_parse_line(line)
-                if saved_username and compare_strings(saved_username, newusername):
-                    print("Username already exists. Returning to menu.")
-                    time.sleep(2)
-                    return False
-    except FileNotFoundError:
+        with open("data.txt", "r") as file:
+            while True:
+                line = file.readline()
+                if not line:
+                    break
+                if line.startswith("USER:"):
+                    saved_username, _ = manual_parse_line(line[5:])
+                    if saved_username and compare_strings(saved_username, newusername):
+                        print("Username already exists. Returning to menu.")
+                        time.sleep(2)
+                        return False
+    except:
         pass
 
-    with open("Register.txt", "a") as file:
-        file.write(newusername + " " + newpassword + "\n")
-
-    with open("current_user.txt", "w") as f:
-        f.write(newusername)
+    with open("data.txt", "a") as file:
+        file.write("USER:" + newusername + " " + newpassword + "\n")
+    set_current_user(newusername)
 
     print("Successfully Registered.")
     time.sleep(2)
@@ -86,19 +116,22 @@ def login():
 
         found = False
         try:
-            with open("Register.txt", "r") as file:
-                for line in file:
-                    saved_username, saved_password = manual_parse_line(line)
-                    if saved_username and compare_strings(saved_username, username) and compare_strings(saved_password, password):
-                        found = True
+            with open("data.txt", "r") as file:
+                while True:
+                    line = file.readline()
+                    if not line:
                         break
-        except FileNotFoundError:
+                    if line.startswith("USER:"):
+                        saved_username, saved_password = manual_parse_line(line[5:])
+                        if saved_username and compare_strings(saved_username, username) and compare_strings(saved_password, password):
+                            found = True
+                            break
+        except:
             print("No registered users found.")
             return False
 
         if found:
-            with open("current_user.txt", "w") as f:
-                f.write(username)
+            set_current_user(username)
             print("Login Successful")
             time.sleep(2)
             return True
@@ -109,15 +142,8 @@ def login():
     return False
 
 # ------------------- Booking -------------------
-def get_current_user():
-    try:
-        with open("current_user.txt", "r") as f:
-            return remove_newline(f.readline())
-    except FileNotFoundError:
-        return ""
-
 def book_table():
-    tables = ["T1", "T2", "T3", "T4"]
+    tables = ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10"]
     print("------ TABLE BOOKING ------")
     name = input("Enter your name: ")
     date_str = input("Enter booking date (YYYY-MM-DD): ")
@@ -141,13 +167,17 @@ def book_table():
             return
 
         try:
-            with open("booking.txt", "r") as f:
-                for line in f:
-                    record = line.strip().split(",")
-                    if record[2] == date_str and record[3] == time_str and record[5] == chosen_table:
-                        print("Table already booked.")
-                        return
-        except FileNotFoundError:
+            with open("data.txt", "r") as f:
+                while True:
+                    line = f.readline()
+                    if not line:
+                        break
+                    if line.startswith("BOOKING:"):
+                        record = line[8:].strip().split(",")
+                        if record[2] == date_str and record[3] == time_str and record[5] == chosen_table:
+                            print("Table already booked.")
+                            return
+        except:
             pass
 
         customers = int(input("Enter number of people (max 6): "))
@@ -155,11 +185,8 @@ def book_table():
             print("Number of people must be between 1 and 6.")
             return
 
-        with open("booking.txt", "a") as f:
-            f.write(f"{user},{name},{date_str},{time_str},{customers},{chosen_table}\n")
-
-        with open("current_booking.txt", "w") as f:
-            f.write(f"{user},{name},{date_str},{time_str},{customers},{chosen_table}")
+        with open("data.txt", "a") as f:
+            f.write(f"BOOKING:{user},{name},{date_str},{time_str},{customers},{chosen_table}\n")
 
         print("Booking successful!")
 
@@ -171,10 +198,41 @@ def load_menu():
     items = []
     try:
         with open("menu.txt", "r") as f:
-            for line in f:
-                parts = line.strip().split(",")
-                items.append((parts[0], float(parts[1])))
-    except FileNotFoundError:
+            while True:
+                line = f.readline()
+                if not line:
+                    break
+                if line.startswith("["):
+                    i = 0
+                    while line[i] != ']':
+                        i += 1
+                    j = i + 2
+                    while line[j] == ' ':
+                        j += 1
+                    k = j
+                    while line[k] != ' ':
+                        k += 1
+                    item_name = line[j:k]
+                    m = k
+                    while line[m] == ' ':
+                        m += 1
+                    price_str = line[m:string_length(line)]
+                    price = 0.0
+                    dot_seen = False
+                    dec_place = 0.1
+                    for ch in price_str:
+                        if ch == '\n':
+                            break
+                        if ch == '.':
+                            dot_seen = True
+                        elif '0' <= ch <= '9':
+                            if not dot_seen:
+                                price = price * 10 + (ord(ch) - ord('0'))
+                            else:
+                                price += (ord(ch) - ord('0')) * dec_place
+                                dec_place *= 0.1
+                    items.append((item_name, price))
+    except:
         print("Menu file not found.")
     return items
 
@@ -185,28 +243,37 @@ def place_order():
         return
 
     user = get_current_user()
+    booking_info = ""
     try:
-        with open("current_booking.txt", "r") as f:
-            booking_info = f.readline().strip()
-            if booking_info.split(",")[0] != user:
-                print("No valid booking under your account.")
-                return
-    except FileNotFoundError:
+        with open("data.txt", "r") as f:
+            while True:
+                line = f.readline()
+                if not line:
+                    break
+                if line.startswith("BOOKING:") and line[8:].startswith(user + ","):
+                    booking_info = line[8:].strip()
+    except:
         print("No current booking found. Please book a table first.")
+        return
+
+    if booking_info == "":
+        print("No valid booking under your account.")
         return
 
     total = 0
     order_details = []
 
-    for i, item in enumerate(menu):
-        print(f"{i + 1}. {item[0]} - RM{item[1]:.2f}")
+    i = 0
+    while i < string_length(menu):
+        print(f"{i + 1}. {menu[i][0]} - RM{menu[i][1]:.2f}")
+        i += 1
 
     while True:
         try:
             choice = int(input("Enter item number to order (0 to finish): "))
             if choice == 0:
                 break
-            if not (1 <= choice <= len(menu)):
+            if not (1 <= choice <= string_length(menu)):
                 print("Invalid item number.")
                 continue
 
@@ -219,15 +286,13 @@ def place_order():
             order_details.append((selected_item[0], selected_item[1], qty))
             total += selected_item[1] * qty
 
-        except ValueError:
+        except:
             print("Invalid input.")
 
-    with open("order.txt", "w") as f:
+    with open("data.txt", "a") as f:
         for item in order_details:
-            f.write(f"{booking_info},{item[0]},{item[1]},{item[2]}\n")
-
-    with open("total.txt", "w") as f:
-        f.write(f"{total:.2f}\n")
+            f.write(f"ORDER:{booking_info},{item[0]},{item[1]},{item[2]}\n")
+        f.write(f"TOTAL:{user},{total:.2f}\n")
 
     print(f"Order recorded. Total: RM{total:.2f}")
 
@@ -235,38 +300,51 @@ def place_order():
 def generate_receipt():
     user = get_current_user()
     try:
-        with open("order.txt", "r") as f:
+        with open("data.txt", "r") as f:
             found = False
             print("------ RECEIPT ------")
-            for line in f:
-                parts = line.strip().split(",")
-                if parts[0] != user:
-                    continue
-                name, date, time, _, table = parts[1:6]
-                item, price, qty = parts[6], float(parts[7]), int(parts[8])
-                print(f"Customer: {name} | Table: {table} | {item} x{qty} @ RM{price:.2f} = RM{price * qty:.2f}")
-                found = True
-        if found:
-            with open("total.txt", "r") as f:
-                total = f.read().strip()
+            total = ""
+            while True:
+                line = f.readline()
+                if not line:
+                    break
+                if line.startswith("ORDER:"):
+                    parts = line[6:].strip().split(",")
+                    if parts[0] != user:
+                        continue
+                    name, date, time, _, table = parts[1:6]
+                    item, price, qty = parts[6], float(parts[7]), int(parts[8])
+                    print(f"Customer: {name} | Table: {table} | {item} x{qty} @ RM{price:.2f} = RM{price * qty:.2f}")
+                    found = True
+                elif line.startswith("TOTAL:"):
+                    p = line[6:].strip().split(",")
+                    if compare_strings(p[0], user):
+                        total = p[1]
+            if found:
                 print(f"Total: RM{total}")
-        else:
-            print("No receipt found for this account.")
-    except FileNotFoundError:
+            else:
+                print("No receipt found for this account.")
+    except:
         print("No receipt found. Please order first.")
 
 def display_records():
     user = get_current_user()
     try:
         print("------ HISTORICAL BOOKINGS ------")
-        with open("booking.txt", "r") as f:
-            for line in f:
-                if line.startswith(user + ","):
-                    print(line.strip())
-    except FileNotFoundError:
+        with open("data.txt", "r") as f:
+            while True:
+                line = f.readline()
+                if not line:
+                    break
+                if line.startswith("BOOKING:") and line[8:].startswith(user + ","):
+                    print("Booking:", line[8:].strip())
+                elif line.startswith("ORDER:"):
+                    if line[6:].startswith(user + ","):
+                        print("Order:", line[6:].strip())
+    except:
         print("No historical records found.")
 
-# ------------------- Main Program -------------------
+# ------------------- Menu UI -------------------
 def display_menu():
     print("------------------------------------------------------")
     print("                       WELCOME                        ")
@@ -293,7 +371,7 @@ def display_main_menu():
             if 1 <= choice <= 6:
                 return choice
             print("Invalid choice. Try again.")
-        except ValueError:
+        except:
             print("Please enter a number.")
 
 # ------------------- Entry Point -------------------
@@ -338,5 +416,6 @@ while True:
             input("Press Enter to continue...")
         elif choice1 == 6:
             print("Logging out...")
+            set_current_user("")
             time.sleep(1)
             break
