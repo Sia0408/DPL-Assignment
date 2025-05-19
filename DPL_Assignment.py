@@ -875,6 +875,7 @@ while True:
             start_payment()
             input("Press Enter to continue...")
         elif choice1 == 6:
+            os.system('cls')
             print("\n\n\n\n\n\n\n\n\n\n\n\n\t\t\t\t\t\t\tLogging out...")
             set_current_user("")
             time.sleep(2)
