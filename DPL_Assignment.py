@@ -877,5 +877,5 @@ while True:
         elif choice1 == 6:
             print("\n\n\n\n\n\n\n\n\n\n\n\n\t\t\t\t\t\t\tLogging out...")
             set_current_user("")
-            time.sleep(1)
+            time.sleep(2)
             break
