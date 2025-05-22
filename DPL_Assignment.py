@@ -799,6 +799,8 @@ def generate_receipt():
             qty = int(parts[3])
             print(name + " x" + str(qty) + " @ RM" + format(price, ".2f") + " = RM" + format(price * qty, ".2f"))
         print("Total: RM" + total)
+        with open("Receipt.txt", "a") as file:
+            file.write("Receipt for " + user+f"\n{name} x{qty} @ RM{price:.2f} = RM{price * qty:.2f}\nTotal: RM" + total+"\n\n")
     else:
         print("No paid order found for receipt.")
 
@@ -1371,7 +1373,7 @@ def display_main_menu():
 def main():
  while True:  
     os.system('cls' if os.name == 'nt' else 'clear')
-    print("==========| Welcome to Restoran Reservation System |==========")
+    print("==========| Welcome to Restaurant Reservation System |==========")
     print("   1. Admin")
     print("   2. User")
     print("   3. Exit")
