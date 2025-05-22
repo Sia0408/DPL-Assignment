@@ -1,0 +1,7 @@
+abc,pizza,15.9,2
+abc,pizza,15.9,2
+TOTAL:abc,63.60
+PAID:abc
+cccc,burger,9.9,5
+TOTAL:cccc,49.50
+PAID:cccc

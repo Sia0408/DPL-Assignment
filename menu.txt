@@ -1,0 +1,4 @@
+No  Product        Price (RM)
+[1] burger         9.9
+[3] coke           3.9
+[4] cake           7.9
